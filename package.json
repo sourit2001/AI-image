@@ -1,0 +1,26 @@
+{
+  "name": "ai-img-pro-editor",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@stripe/stripe-js": "2.4.0",
+    "axios": "1.7.2",
+    "form-data": "^4.0.4",
+    "next": "14.2.4",
+    "next-auth": "4.24.5",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "stripe": "^14.0.0"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17"
+  }
+}
