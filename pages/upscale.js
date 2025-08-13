@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+import { useLanguage } from '../lib/LanguageContext';
 
 export default function Upscale() {
+  const { translate } = useLanguage();
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [fileDataUrl, setFileDataUrl] = useState(null);
@@ -33,12 +35,12 @@ export default function Upscale() {
 
   const startPrediction = async () => {
     if (!fileDataUrl) {
-      setError('请先上传图片');
+      setError(translate('errors.pleaseSelectImage'));
       return;
     }
 
     setLoading(true);
-    setStatus('提交任务中...');
+    setStatus(translate('processing'));
     setError('');
     setResultUrl(null);
 
@@ -61,11 +63,11 @@ export default function Upscale() {
       if (!resp.ok) throw new Error(typeof data.error === 'string' ? data.error : JSON.stringify(data.error));
       
       const id = data.id;
-      if (!id) throw new Error('未获取到任务ID');
+      if (!id) throw new Error('Failed to get task ID');
       
       await pollPrediction(id);
     } catch (e) {
-      setError(e.message || '请求失败');
+      setError(e.message || translate('errors.requestFailed'));
       setLoading(false);
     }
   };
@@ -76,18 +78,18 @@ export default function Upscale() {
       const data = await resp.json();
       if (data.status === 'succeeded') {
         setResultUrl(data.output);
-        setStatus('处理完成！');
+        setStatus(translate('processingComplete'));
         setLoading(false);
       } else if (data.status === 'failed') {
-        setError('处理失败：' + (data.error || '未知错误'));
+        setError(translate('processingFailed', { error: data.error || translate('errors.unknownError') }));
         setLoading(false);
         setStatus('');
       } else {
-        setStatus('处理中...');
+        setStatus(translate('processingStatus', { status: data.status }));
         setTimeout(() => pollPrediction(id), 2000);
       }
     } catch (e) {
-      setError('获取结果失败：' + e.message);
+      setError('Failed to get result: ' + e.message);
       setLoading(false);
       setStatus('');
     }
@@ -96,8 +98,8 @@ export default function Upscale() {
   return (
     <>
       <Head>
-        <title>高清放大 - AI Photo Studio</title>
-        <meta name="description" content="细节增强，适配不同清晰度场景与人脸优化" />
+        <title>{translate('upscaleTitle')} - {translate('title')}</title>
+        <meta name="description" content={translate('upscaleDescription')} />
       </Head>
 
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50">
@@ -105,10 +107,10 @@ export default function Upscale() {
         <header className="w-full bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
             <Link href="/" className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-600">
-              AI Photo Studio
+              {translate('title')}
             </Link>
             <Link href="/" className="text-gray-600 hover:text-gray-900">
-              ← 返回首页
+              {translate('backToHome')}
             </Link>
           </div>
         </header>
@@ -116,26 +118,24 @@ export default function Upscale() {
         <main className="max-w-5xl mx-auto px-6 py-12">
           {/* Page Title */}
           <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4">高清放大</h1>
-            <p className="text-xl text-gray-600">细节增强，适配不同清晰度场景与人脸优化</p>
+            <h1 className="text-4xl font-bold mb-4">{translate('upscaleTitle')}</h1>
+            <p className="text-xl text-gray-600">{translate('upscaleDescription')}</p>
           </div>
 
           {/* Editor Section */}
           <div className="bg-white rounded-2xl shadow-xl p-8">
             <div className="mb-6">
-              <label className="block text-lg font-medium mb-4">选择图片</label>
-              <input 
-                type="file" 
-                accept="image/*" 
-                onChange={onFileChange} 
-                className="w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-400 transition-colors"
-              />
+              <label htmlFor="file-upload" className="cursor-pointer block w-full text-center px-8 py-4 bg-purple-600 text-white text-lg font-semibold rounded-lg hover:bg-purple-700 transition-colors">
+                {translate('selectImage')}
+              </label>
+              <input id="file-upload" type="file" className="hidden" accept="image/*" onChange={onFileChange} />
+              {file && <p className="mt-4 text-gray-600 text-center">{translate('selectedFile')}{file.name}</p>}
             </div>
 
             {/* Parameters */}
             <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <label className="block text-sm font-medium mb-2">放大倍数</label>
+                <label className="block text-sm font-medium mb-2">{translate('scaleLabel')}</label>
                 <select 
                   value={upscaleScale} 
                   onChange={e => setUpscaleScale(e.target.value)} 
@@ -147,17 +147,17 @@ export default function Upscale() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">处理模式</label>
+                <label className="block text-sm font-medium mb-2">{translate('processingMode')}</label>
                 <select 
                   value={upscaleMode} 
                   onChange={e => setUpscaleMode(e.target.value)} 
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 >
-                  <option value="standard_v2">标准</option>
-                  <option value="low_resolution_v2">低分辨率</option>
+                  <option value="standard_v2">{translate('standard')}</option>
+                  <option value="low_resolution_v2">{translate('lowResolution')}</option>
                   <option value="cgi">CGI</option>
-                  <option value="high_fidelity_v2">高保真</option>
-                  <option value="text_refine">文本优化</option>
+                  <option value="high_fidelity_v2">{translate('highFidelity')}</option>
+                  <option value="text_refine">{translate('textRefine')}</option>
                 </select>
               </div>
               <div className="flex items-center">
@@ -168,7 +168,7 @@ export default function Upscale() {
                     onChange={e => setUpscaleFaceEnhance(e.target.checked)} 
                     className="mr-2 h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
                   />
-                  <span className="text-sm font-medium">人脸增强</span>
+                  <span className="text-sm font-medium">{translate('faceEnhancement')}</span>
                 </label>
               </div>
             </div>
@@ -180,7 +180,7 @@ export default function Upscale() {
                 onClick={startPrediction}
                 className="px-8 py-4 bg-purple-500 text-white text-lg font-semibold rounded-lg hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {loading ? '处理中...' : '开始高清放大'}
+                {loading ? translate('processing') : translate('upscaleImage')}
               </button>
             </div>
 
@@ -195,22 +195,22 @@ export default function Upscale() {
             {/* Preview and Result */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
-                <h3 className="text-lg font-medium mb-4">原图预览</h3>
+                <h3 className="text-lg font-medium mb-4">{translate('originalPreview')}</h3>
                 <div className="border-2 border-gray-200 rounded-lg p-4 bg-gray-50 min-h-[300px] flex items-center justify-center">
                   {previewUrl ? (
                     <img src={previewUrl} alt="preview" className="max-h-80 max-w-full object-contain" />
                   ) : (
-                    <span className="text-gray-400">请选择图片</span>
+                    <span className="text-gray-400">{translate('pleaseSelectImage')}</span>
                   )}
                 </div>
               </div>
               <div>
-                <h3 className="text-lg font-medium mb-4">处理结果</h3>
+                <h3 className="text-lg font-medium mb-4">{translate('processedResult')}</h3>
                 <div className="border-2 border-gray-200 rounded-lg p-4 bg-gray-50 min-h-[300px] flex items-center justify-center">
                   {resultUrl ? (
                     <img src={resultUrl} alt="result" className="max-h-80 max-w-full object-contain" />
                   ) : (
-                    <span className="text-gray-400">结果将在此显示</span>
+                    <span className="text-gray-400">{translate('resultWillShow')}</span>
                   )}
                 </div>
                 {resultUrl && (
@@ -220,7 +220,7 @@ export default function Upscale() {
                       download 
                       className="inline-block px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                     >
-                      下载结果
+                      {translate('downloadResult')}
                     </a>
                   </div>
                 )}

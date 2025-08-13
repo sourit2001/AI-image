@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+import { useLanguage } from '../lib/LanguageContext';
 
 export default function RemoveText() {
+  const { translate } = useLanguage();
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [fileDataUrl, setFileDataUrl] = useState(null);
@@ -29,12 +31,12 @@ export default function RemoveText() {
 
   const startPrediction = async () => {
     if (!fileDataUrl) {
-      setError('请先上传图片');
+      setError(translate('errors.pleaseSelectImage'));
       return;
     }
 
     setLoading(true);
-    setStatus('提交任务中...');
+    setStatus(translate('processing'));
     setError('');
     setResultUrl(null);
 
@@ -52,11 +54,11 @@ export default function RemoveText() {
       if (!resp.ok) throw new Error(typeof data.error === 'string' ? data.error : JSON.stringify(data.error));
       
       const id = data.id;
-      if (!id) throw new Error('未获取到任务ID');
+      if (!id) throw new Error('Failed to get task ID');
       
       await pollPrediction(id);
     } catch (e) {
-      setError(e.message || '请求失败');
+      setError(e.message || translate('errors.requestFailed'));
       setLoading(false);
       setStatus('');
     }
@@ -74,23 +76,23 @@ export default function RemoveText() {
       }
 
       if (!resp.ok) {
-          throw new Error(data.error || '获取结果失败');
+          throw new Error(data.error || 'Failed to get result');
       }
 
       if (data.status === 'succeeded') {
         setResultUrl(data.output);
-        setStatus('处理完成！');
+        setStatus(translate('processingComplete'));
         setLoading(false);
       } else if (data.status === 'failed') {
-        setError('处理失败：' + (data.error || '未知错误'));
+        setError(translate('processingFailed', { error: data.error || translate('errors.unknownError') }));
         setLoading(false);
         setStatus('');
       } else {
-        setStatus(`处理中... (${data.status})`);
+        setStatus(translate('processingStatus', { status: data.status }));
         setTimeout(() => pollPrediction(id), 2000);
       }
     } catch (e) {
-      setError('获取结果失败：' + e.message);
+      setError('Failed to get result: ' + e.message);
       setLoading(false);
       setStatus('');
     }
@@ -99,8 +101,8 @@ export default function RemoveText() {
   return (
     <>
       <Head>
-        <title>消除文字 - AI Photo Studio</title>
-        <meta name="description" content="智能识别并移除图片中的所有文字内容" />
+        <title>{translate('removeTextTitle')} - {translate('title')}</title>
+        <meta name="description" content={translate('removeTextDescription')} />
       </Head>
 
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
@@ -108,28 +110,28 @@ export default function RemoveText() {
         <header className="w-full bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
             <Link href="/" className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-600">
-              AI Photo Studio
+              {translate('title')}
             </Link>
             <Link href="/" className="text-gray-600 hover:text-gray-900">
-              ← 返回首页
+              {translate('backToHome')}
             </Link>
           </div>
         </header>
 
         <main className="max-w-5xl mx-auto px-6 py-12">
           <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4">消除文字</h1>
-            <p className="text-xl text-gray-600">智能识别并移除图片中的所有文字内容</p>
+            <h1 className="text-4xl font-bold mb-4">{translate('removeTextTitle')}</h1>
+            <p className="text-xl text-gray-600">{translate('removeTextDescription')}</p>
           </div>
 
           <div className="bg-white p-8 rounded-2xl shadow-xl">
             {/* Upload Section */}
             <div className="mb-8 text-center">
-              <label htmlFor="file-upload" className="cursor-pointer inline-block px-8 py-4 bg-purple-600 text-white text-lg font-semibold rounded-lg hover:bg-purple-700 transition-colors">
-                选择图片
+              <label htmlFor="file-upload" className="cursor-pointer block w-full text-center px-8 py-4 bg-purple-600 text-white text-lg font-semibold rounded-lg hover:bg-purple-700 transition-colors">
+                {translate('selectImage')}
               </label>
               <input id="file-upload" type="file" className="hidden" accept="image/*" onChange={onFileChange} />
-              {file && <p className="mt-4 text-gray-600">已选择: {file.name}</p>}
+              {file && <p className="mt-4 text-gray-600 text-center">{translate('selectedFile')}{file.name}</p>}
             </div>
 
             {/* Action Button */}
@@ -139,7 +141,7 @@ export default function RemoveText() {
                 onClick={startPrediction}
                 className="px-8 py-4 bg-gray-700 text-white text-lg font-semibold rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {loading ? '处理中...' : '开始消除文字'}
+                {loading ? translate('processing') : translate('startProcessing')}
               </button>
             </div>
 
@@ -154,22 +156,22 @@ export default function RemoveText() {
             {/* Preview and Result */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
-                <h3 className="text-lg font-medium mb-4 text-center">原图预览</h3>
+                <h3 className="text-lg font-medium mb-4 text-center">{translate('originalPreview')}</h3>
                 <div className="border-2 border-gray-200 rounded-lg p-4 bg-gray-50 min-h-[300px] flex items-center justify-center">
                   {previewUrl ? (
                     <img src={previewUrl} alt="preview" className="max-h-80 max-w-full object-contain" />
                   ) : (
-                    <span className="text-gray-400">请选择图片</span>
+                    <span className="text-gray-400">{translate('pleaseSelectImage')}</span>
                   )}
                 </div>
               </div>
               <div>
-                <h3 className="text-lg font-medium mb-4 text-center">处理结果</h3>
+                <h3 className="text-lg font-medium mb-4 text-center">{translate('processedResult')}</h3>
                 <div className="border-2 border-gray-200 rounded-lg p-4 bg-gray-50 min-h-[300px] flex items-center justify-center">
                   {resultUrl ? (
                     <img src={resultUrl} alt="result" className="max-h-80 max-w-full object-contain" />
                   ) : (
-                    <span className="text-gray-400">结果将在此显示</span>
+                    <span className="text-gray-400">{translate('resultWillShow')}</span>
                   )}
                 </div>
                 {resultUrl && (
@@ -179,7 +181,7 @@ export default function RemoveText() {
                       download 
                       className="inline-block px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                     >
-                      下载结果
+                      {translate('downloadResult')}
                     </a>
                   </div>
                 )}
