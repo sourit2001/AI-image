@@ -1,6 +1,7 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import { useLanguage, LanguageSwitcher } from '../lib/LanguageContext';
+import { useAuth } from '../lib/AuthContext';
 
 const features = [
   {
@@ -79,6 +80,15 @@ const pricingPlans = [
 
 export default function Home() {
   const { translate, isLoading } = useLanguage();
+  const { user, signOut, loading } = useAuth();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -107,12 +117,25 @@ export default function Home() {
             </h1>
             <div className="flex items-center space-x-4">
               <LanguageSwitcher />
-              <button className="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium transition-colors">
-                {translate('login')}
-              </button>
-              <button className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 font-medium transition-all duration-200 transform hover:scale-105">
-                {translate('register')}
-              </button>
+              {loading ? (
+                <div className="animate-pulse bg-gray-200 h-10 w-24 rounded-lg"></div>
+              ) : user ? (
+                <div className="flex items-center space-x-3">
+                  <span className="text-gray-700 text-sm">
+                    {translate('welcome')}, {user.email}
+                  </span>
+                  <button
+                    onClick={handleSignOut}
+                    className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors text-sm"
+                  >
+                    {translate('auth.signOut')}
+                  </button>
+                </div>
+              ) : (
+                <Link href="/login" className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">
+                  {translate('loginRegister')}
+                </Link>
+              )}
             </div>
           </div>
         </header>
